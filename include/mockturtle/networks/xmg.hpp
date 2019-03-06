@@ -36,6 +36,7 @@
 #include <optional>
 #include <stack>
 #include <string>
+#include <map>
 
 #include <ez/direct_iterator.hpp>
 #include <kitty/dynamic_truth_table.hpp>
@@ -79,6 +80,7 @@ public:
   using base_type = xmg_network;
   using storage = std::shared_ptr<xmg_storage>;
   using node = std::size_t;
+  std::map<node, std::vector<node>> parentss;
 
   struct signal
   {
@@ -369,6 +371,154 @@ public:
     return {index, fcompl};
   }
 
+  /*
+   * 2019/02/27, for inverters optimization, should turnoff the
+   * automatic complemented edges minimization
+   * */
+  signal create_maj_without_complement_opt( signal a, signal b, signal c )
+  {
+    /* order inputs */
+    if ( a.index > b.index )
+    {
+      std::swap( a, b );
+    }
+    if ( b.index > c.index )
+    {
+      std::swap( b, c );
+    }
+    if ( a.index > b.index )
+    {
+      std::swap( a, b );
+    }
+
+    /* trivial cases */
+    if ( a.index == b.index )
+    {
+      return ( a.complement == b.complement ) ? a : c;
+    }
+    else if ( b.index == c.index )
+    {
+      return ( b.complement == c.complement ) ? b : a;
+    }
+    else if ( a.index == b.index == c.index )
+    {
+      return ( a.complement == b.complement ) ? a : c;
+    }
+
+    /*  complemented edges minimization */
+    auto node_complement = false;
+
+    storage::element_type::node_type node;
+    node.children[0] = a;
+    node.children[1] = b;
+    node.children[2] = c;
+
+    /* structural hashing */
+    const auto it = _storage->hash.find( node );
+    if ( it != _storage->hash.end() )
+    {
+      return {it->second, node_complement};
+    }
+
+    const auto index = _storage->nodes.size();
+
+    if ( index >= .9 * _storage->nodes.capacity() )
+    {
+      _storage->nodes.reserve( static_cast<size_t>( 3.1415 * index ) );
+      _storage->hash.reserve( static_cast<size_t>( 3.1415 * index ) );
+    }
+
+    _storage->nodes.push_back( node );
+
+    _storage->hash[node] = index;
+
+    /* increase ref-count to children */
+    _storage->nodes[a.index].data[0].h1++;
+    _storage->nodes[b.index].data[0].h1++;
+    _storage->nodes[c.index].data[0].h1++;
+
+    for ( auto const& fn : _events->on_add )
+    {
+      fn( index );
+    }
+
+    return {index, node_complement};
+  }
+  
+  signal create_xor3_without_complement_opt( signal a, signal b, signal c )
+  {
+    /* order inputs */
+    if ( a.index < b.index )
+    {
+      std::swap( a, b );
+    }
+    if ( b.index < c.index )
+    {
+      std::swap( b, c );
+    }
+    if ( a.index < b.index )
+    {
+      std::swap( a, b );
+    }
+
+    /* propagate complement edges */
+    bool fcompl = ( a.complement != b.complement ) != c.complement;
+    //a.complement = b.complement = c.complement = false;
+
+    /* trivial cases */
+    if ( a.index == b.index )
+    {
+      return c ^ fcompl;
+    }
+    else if ( b.index == c.index )
+    {
+      return a ^ fcompl;
+    }
+    else if ( ( a.index == b.index ) && ( b.index == c.index ) )
+    {
+      return a ^ fcompl;
+    }
+
+    storage::element_type::node_type node;
+    node.children[0] = a;
+    node.children[1] = b;
+    node.children[2] = c;
+
+    /* 2019/02/17 disable inverters propagation */
+    fcompl = false;
+
+    /* structural hashing */
+    const auto it = _storage->hash.find( node );
+    if ( it != _storage->hash.end() )
+    {
+      return {it->second, fcompl};
+    }
+
+    const auto index = _storage->nodes.size();
+
+    if ( index >= .9 * _storage->nodes.capacity() )
+    {
+      _storage->nodes.reserve( static_cast<size_t>( 3.1415 * index ) );
+      _storage->hash.reserve( static_cast<size_t>( 3.1415 * index ) );
+    }
+
+    _storage->nodes.push_back( node );
+
+    _storage->hash[node] = index;
+
+    /* increase ref-count to children */
+    _storage->nodes[a.index].data[0].h1++;
+    _storage->nodes[b.index].data[0].h1++;
+    _storage->nodes[c.index].data[0].h1++;
+
+    for ( auto const& fn : _events->on_add )
+    {
+      fn( index );
+    }
+
+    return {index, fcompl};
+  }
+
   signal create_and( signal const& a, signal const& b )
   {
     return create_maj( get_constant( false ), a, b );
@@ -403,10 +553,20 @@ public:
   {
     return create_xor3( get_constant( false ), a, b );
   }
+  
+  signal create_xor_without_complement_opt( signal const& a, signal const& b )
+  {
+    return create_xor3_without_complement_opt( get_constant( false ), a, b );
+  }
 
   signal create_xnor( signal const& a, signal const& b )
   {
     return create_xor3( get_constant( true ), a, b );
+  }
+
+  signal create_xnor_without_complement_opt( signal const& a, signal const& b )
+  {
+    return create_xor3_without_complement_opt( get_constant( true ), a, b );
   }
 #pragma endregion
 
@@ -593,6 +753,139 @@ public:
 
     return std::nullopt;
   }
+  
+  std::optional<std::pair<node, signal>> replace_in_node_without_complement_opt( node const& n, node const& old_node, signal new_signal )
+  {
+    auto& node = _storage->nodes[n];
+
+    uint32_t fanin = 0u;
+    for ( auto i = 0u; i < 4u; ++i )
+    {
+      if ( i == 3u )
+      {
+        return std::nullopt;
+      }
+
+      if ( node.children[i].index == old_node )
+      {
+        fanin = i;
+        new_signal.complement ^= node.children[i].weight;
+        break;
+      }
+    }
+
+    // determine potential new children of node n
+    signal child2 = new_signal;
+    signal child1 = node.children[(fanin + 1 ) % 3];
+    signal child0 = node.children[(fanin + 2 ) % 3];
+
+    auto _is_maj = is_maj( n );
+
+    /* normalize order */
+    if ( _is_maj )
+    {
+      if ( child0.index > child1.index )
+      {
+        std::swap( child0, child1 );
+      }
+      if ( child1.index > child2.index )
+      {
+        std::swap( child1, child2 );
+      }
+      if ( child0.index > child1.index )
+      {
+        std::swap( child0, child1 );
+      }
+
+      assert( child0.index <= child1.index );
+      assert( child1.index <= child2.index );
+    }
+    else
+    {
+      if ( child0.index < child1.index )
+      {
+        std::swap( child0, child1 );
+      }
+      if ( child1.index < child2.index )
+      {
+        std::swap( child1, child2 );
+      }
+      if ( child0.index < child1.index )
+      {
+        std::swap( child0, child1 );
+      }
+
+      assert( child0.index >= child1.index );
+      assert( child1.index >= child2.index );
+    }
+
+    // normalize complemented edges
+    auto node_complement = false;
+
+    // check for trivial cases?
+    if ( _is_maj )
+    {
+      if ( child0.index == child1.index )
+      {
+        const auto diff_pol = child0.complement != child1.complement;
+        return std::make_pair( n, ( diff_pol ? child2 : child0 ) ^ node_complement );
+      }
+      else if ( child1.index == child2.index )
+      {
+        const auto diff_pol = child1.complement != child2.complement;
+        return std::make_pair( n, ( diff_pol ? child0 : child1 ) ^ node_complement );
+      }
+    }
+    else
+    {
+      if ( child0.index == child1.index )
+      {
+        return std::make_pair( n, child2 ^ node_complement );
+      }
+      else if ( child1.index == child2.index )
+      {
+        return std::make_pair( n, child0 ^ node_complement );
+      }
+      else if ( ( child0.index == child1.index ) && ( child1.index == child2.index ) )
+      {
+        return std::make_pair( n, child0 ^ node_complement );
+      }
+    }
+
+    // node already in hash table
+    storage::element_type::node_type _hash_obj;
+    _hash_obj.children[0] = child0;
+    _hash_obj.children[1] = child1;
+    _hash_obj.children[2] = child2;
+    if ( const auto it = _storage->hash.find( _hash_obj ); it != _storage->hash.end() )
+    {
+      return std::make_pair( n, signal( it->second, 0 ) );
+    }
+
+    // remember before
+    const auto old_child0 = signal{node.children[0]};
+    const auto old_child1 = signal{node.children[1]};
+    const auto old_child2 = signal{node.children[2]};
+
+    // erase old node in hash table
+    _storage->hash.erase( node );
+
+    // insert updated node into hash table
+    node.children[0] = child0;
+    node.children[1] = child1;
+    node.children[2] = child2;
+    _storage->hash[node] = n;
+
+    // update the reference counter of the new signal
+    _storage->nodes[new_signal.index].data[0].h1++;
+
+    for ( auto const& fn : _events->on_modified )
+    {
+      fn( n, {old_child0, old_child1, old_child2} );
+    }
+
+    return std::nullopt;
+  }
 
   void replace_in_outputs( node const& old_node, signal const& new_signal )
   {
@@ -658,6 +951,35 @@ public:
           continue; /* ignore PIs */
 
         if ( const auto repl = replace_in_node( idx, _old, _new ); repl )
+        {
+          to_substitute.push( *repl );
+        }
+      }
+
+      /* check outputs */
+      replace_in_outputs( _old, _new );
+
+      // reset fan-in of old node
+      take_out_node( _old );
+    }
+  }
+
+  void substitute_node_without_complement_opt( node const& old_node, signal const& new_signal )
+  {
+    std::stack<std::pair<node, signal>> to_substitute;
+    to_substitute.push( {old_node, new_signal} );
+
+    while ( !to_substitute.empty() )
+    {
+      const auto [_old, _new] = to_substitute.top();
+      to_substitute.pop();
+
+      for ( auto idx = 1u; idx < _storage->nodes.size(); ++idx )
+      {
+        if ( is_pi( idx ) )
+          continue; /* ignore PIs */
+
+        if ( const auto repl = replace_in_node_without_complement_opt( idx, _old, _new ); repl )
         {
           to_substitute.push( *repl );
         }
@@ -914,6 +1236,56 @@ public:
   }
 #pragma endregion
 
+#pragma region Inverters propagations
+void complement_node( node const& n, std::vector<node> const& parents )
+{
+  assert( n != 0 && !is_pi( n ) );
+  
+  auto & c1 = _storage->nodes[n].children[0];
+  auto & c2 = _storage->nodes[n].children[1];
+  auto & c3 = _storage->nodes[n].children[2];
+
+  if( is_maj( n ) )
+  {
+    c1.weight = !c1.weight;
+    c2.weight = !c2.weight;
+    c3.weight = !c3.weight;
+  }
+  else
+  {
+    if( c3.weight )
+    {
+      c3.weight = !c3.weight;
+    }
+    else
+    {
+      c2.weight = !c2.weight;
+    }
+  }
+
+  for( auto& p : parents )
+  {
+    for( auto i = 0; i < 3; i++ )
+    {
+      auto& c = _storage->nodes[p].children[i];
+      if( c.index == n )
+      {
+        c.weight = !c.weight;
+      }
+    }
+  }
+
+  /* pos */
+  for ( auto& output : _storage->outputs )
+  {
+    if( output.index == n )
+    {
+      output.weight = !output.weight;
+    }
+  }
+}
+#pragma endregion
+
 #pragma region Custom node values
   void clear_values() const
   {
@@ -973,6 +1345,7 @@ public:
   {
     return *_events;
   }
+
 #pragma endregion
 
 public:
