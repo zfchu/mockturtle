@@ -246,7 +246,7 @@ public:
     {
       return ( b.complement == c.complement ) ? b : a;
     }
-    else if ( a.index == b.index == c.index )
+    else if ( ( a.index == b.index) && ( b.index == c.index ) )
     {
       return ( a.complement == b.complement ) ? a : c;
     }
@@ -400,7 +400,7 @@ public:
     {
       return ( b.complement == c.complement ) ? b : a;
     }
-    else if ( a.index == b.index == c.index )
+    else if ( ( a.index == b.index) && ( b.index == c.index ) )
     {
       return ( a.complement == b.complement ) ? a : c;
     }
