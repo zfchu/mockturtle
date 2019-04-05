@@ -1284,6 +1284,24 @@ void complement_node( node const& n, std::vector<node> const& parents )
     }
   }
 }
+
+/*
+ * f = !(a xor b) = !a xor b = a xor !b
+ * */
+void xor_inv_jump( node const& n )
+{ 
+  assert( n != 0 && !is_pi( n ) && is_xor( n ) );
+
+  auto & c1 = _storage->nodes[n].children[0];
+  auto & c2 = _storage->nodes[n].children[1];
+  auto & c3 = _storage->nodes[n].children[2];
+
+  if( c2.weight || c3.weight )
+  {
+    c2.weight = !c2.weight;
+    c3.weight = !c3.weight;
+  }
+}
 #pragma endregion
 
 #pragma region Custom node values
