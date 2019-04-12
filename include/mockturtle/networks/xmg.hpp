@@ -1257,9 +1257,13 @@ void complement_node( node const& n, std::vector<node> const& parents )
     {
       c3.weight = !c3.weight;
     }
-    else
+    else if( c2.weight )
     {
       c2.weight = !c2.weight;
+    }
+    else
+    {
+      c1.weight = !c1.weight;
     }
   }
 
@@ -1290,7 +1294,7 @@ void complement_node( node const& n, std::vector<node> const& parents )
  * */
 void xor_inv_jump( node const& n )
 { 
-  assert( n != 0 && !is_pi( n ) && is_xor( n ) );
+  assert( n != 0 && !is_pi( n ) && is_xor3( n ) );
 
   auto & c1 = _storage->nodes[n].children[0];
   auto & c2 = _storage->nodes[n].children[1];
