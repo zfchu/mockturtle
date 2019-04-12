@@ -1290,7 +1290,8 @@ void complement_node( node const& n, std::vector<node> const& parents )
 }
 
 /*
- * f = !(a xor b) = !a xor b = a xor !b
+ * f = !(0 xor a xor b) = ( 0 xor !a xor b) = ( 0 xor a xor !b) =
+ * ( 1 xor a xor b)
  * */
 void xor_inv_jump( node const& n )
 { 
@@ -1300,10 +1301,31 @@ void xor_inv_jump( node const& n )
   auto & c2 = _storage->nodes[n].children[1];
   auto & c3 = _storage->nodes[n].children[2];
 
-  if( c2.weight || c3.weight )
+  auto tmp = static_cast<int>( c1.weight ) + static_cast<int>( c2.weight ) + static_cast<int>( c3.weight );
+  
+  if( tmp == 0 )
+  {
+    return;
+  }
+  else if( tmp == 1 )
+  {
+    if( c2.weight ) { c1.weight = !c1.weight; c2.weight = !c2.weight; }
+    if( c3.weight ) { c1.weight = !c1.weight; c3.weight = !c3.weight; }
+  }
+  else if( tmp == 2 )
+  {
+    if( c1.weight ) { c1.weight = !c1.weight; }
+    if( c2.weight ) { c2.weight = !c2.weight; }
+    if( c3.weight ) { c3.weight = !c3.weight; }
+  }
+  else if( tmp == 3 )
   {
     c2.weight = !c2.weight;
     c3.weight = !c3.weight;
+  }
+  else
+  {
+    assert( false );
   }
 }
 #pragma endregion
