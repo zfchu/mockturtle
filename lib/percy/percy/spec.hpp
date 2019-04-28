@@ -115,6 +115,7 @@ namespace percy
             uint64_t triv_flag; ///< Is 1 at index i if output i is constant zero or one or a projection.
             int nr_triv; ///< Number of trivial output functions
             int nr_nontriv; ///< Number of non-trivial output functions
+            int nr_rand_tt_assigns;
 
             bool add_nontriv_clauses = true; ///< Symmetry break: do not allow trivial operators
             bool add_alonce_clauses = true; ///< Symmetry break: all steps must be used at least once

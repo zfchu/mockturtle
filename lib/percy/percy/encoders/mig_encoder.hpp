@@ -11,7 +11,15 @@ namespace percy
     private:
         int level_dist[32]; // How many steps are below a certain level
         int nr_levels; // The number of levels in the Boolean fence
-
+        
+        int nr_sel_vars;
+        int nr_res_vars;
+        int nr_sim_vars;
+        int total_nr_vars;
+        int sel_offset;
+        int res_offset;
+        int sim_offset;
+        bool dirty = false;
         pabc::lit pLits[2048];
         solver_wrapper* solver;
 
