@@ -1020,13 +1020,33 @@ bool create_from_expression( TT& tt, const std::string& expression )
         std::cerr << "[e] could not parse MAJ expression\n";
         return false;
       }
-      if ( children.size() != 3u )
+      if ( children.size() != 3u && children.size() != 5u )
       {
-        std::cerr << "[e] MAJ expression must have three children\n";
+        std::cout << "children size: " << children.size() << std::endl;
+        std::cerr << "[e] MAJ expression must have three or five children\n";
         return false;
       }
       symbols.pop();
-      auto func = ternary_majority( children[0], children[1], children[2] );
+      
+      TT func;
+      if( children.size() == 3u )
+      {
+        func = ternary_majority( children[0], children[1], children[2] );
+      }
+      else
+      {
+        auto a = children[0];
+        auto b = children[1];
+        auto c = children[2];
+        auto d = children[3];
+        auto e = children[4];
+
+        auto m1 = ternary_majority( a, b, c );
+        auto m2 = ternary_majority( a, b, d );
+        auto m3 = ternary_majority( m2, c, d );
+
+        func = ternary_majority( m1, m3, e );
+      }
       push_tt( func );
     }
     break;
