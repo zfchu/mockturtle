@@ -869,6 +869,28 @@ inline void create_characteristic( TT& tt, const TTFrom& from )
   tt = ~var ^ ext;
 }
 
+template<typename TT>
+TT majority_of_five( TT& a, TT& b, TT& c, TT& d, TT& e )
+{
+  auto m1 = ternary_majority( a, b, c );
+  auto m2 = ternary_majority( a, b, d );
+  auto m3 = ternary_majority( m2, c, d );
+
+  return ternary_majority( m1, m3, e );
+}
+
+template<typename TT>
+TT majority_of_seven( TT& a, TT& b, TT& c, TT& d, TT& e, TT& f, TT& g )
+{
+  auto dbar = ~d;
+  auto fbar = ~f;
+  auto m1 = majority_of_five( a, dbar, e, e, fbar );
+  auto m1bar = ~m1;
+  auto m2 = majority_of_five( a, a, b, c, g );
+  auto m3 = majority_of_five( b, c, e, g, m1bar );
+  
+  return majority_of_five( d, f, m1, m2, m3 );
+}
 /*! \brief Creates truth table from textual expression
 
   An expression `E` is a constant `0` or `1`, or a variable `a`, `b`, ..., `p`,
@@ -1020,10 +1042,10 @@ bool create_from_expression( TT& tt, const std::string& expression )
         std::cerr << "[e] could not parse MAJ expression\n";
         return false;
       }
-      if ( children.size() != 3u && children.size() != 5u )
+      if ( children.size() != 3u && children.size() != 5u && children.size() != 7u )
       {
         std::cout << "children size: " << children.size() << std::endl;
-        std::cerr << "[e] MAJ expression must have three or five children\n";
+        std::cerr << "[e] MAJ expression must have three or five or seven children\n";
         return false;
       }
       symbols.pop();
@@ -1033,19 +1055,13 @@ bool create_from_expression( TT& tt, const std::string& expression )
       {
         func = ternary_majority( children[0], children[1], children[2] );
       }
+      else if( children.size() == 5u )
+      {
+        func = majority_of_five( children[0], children[1], children[2], children[3], children[4] );
+      }
       else
       {
-        auto a = children[0];
-        auto b = children[1];
-        auto c = children[2];
-        auto d = children[3];
-        auto e = children[4];
-
-        auto m1 = ternary_majority( a, b, c );
-        auto m2 = ternary_majority( a, b, d );
-        auto m3 = ternary_majority( m2, c, d );
-
-        func = ternary_majority( m1, m3, e );
+        func = majority_of_seven( children[0], children[1], children[2], children[3], children[4], children[5], children[6] );
       }
       push_tt( func );
     }
