@@ -638,7 +638,7 @@ private:
  * some rewriting algorithms in the folder
  * `mockturtle/algorithms/node_resyntesis`, since the resynthesis functions
  * have the same signature.
- * 
+ *
  * In contrast to node resynthesis, cut rewriting uses the same type for the
  * input and output network.  Consequently, the algorithm does not return a
  * new network but applies changes in-place to the input network.
@@ -690,7 +690,9 @@ void cut_rewriting( Ntk& ntk, RewritingFn&& rewriting_fn, cut_rewriting_params c
   }
   else
   {
-    fanout_view2<Ntk> ntk_fo{ntk};
+    fanout_view2_params fvps;
+    fvps.update_on_delete = false;
+    fanout_view2<Ntk> ntk_fo{ntk, fvps};
     detail::cut_rewriting_impl<fanout_view2<Ntk>, RewritingFn, NodeCostFn> p( ntk_fo, rewriting_fn, ps, st, cost_fn );
     p.run();
   }
