@@ -70,6 +70,11 @@ namespace percy
         {
             return pabc::sat_solver_var_value(solver, var);
         }
+        
+        pabc::abctime set_time_limit( pabc::abctime limit )
+        {
+          return pabc::sat_solver_set_runtime_limit( solver, limit * 1000 * 1000 ); //limit in seconds
+        }
 
         synth_result solve(int cl)
         {

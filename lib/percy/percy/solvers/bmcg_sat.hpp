@@ -94,6 +94,11 @@ namespace percy
                 return timeout;
             }
         }
+        
+        pabc::abctime set_time_limit( pabc::abctime limit )
+        {
+          return pabc::bmcg_sat_solver_set_runtime_limit( solver, limit * 1000 * 1000 ); //limit in seconds
+        }
 
     };
 }
