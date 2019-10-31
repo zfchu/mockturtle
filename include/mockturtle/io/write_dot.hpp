@@ -274,15 +274,31 @@ void write_dot( Ntk const& ntk, std::ostream& os, Drawer const& drawer = {} )
                           drawer.node_fillcolor( ntk, n ) );
     if ( !ntk.is_constant( n ) && !ntk.is_pi( n ) )
     {
-      ntk.foreach_fanin( n, [&]( auto const& f ) {
-        if ( !drawer.draw_signal( ntk, n, f ) )
+      /* for img_network drawing, modified by Zhufei */
+      if( kitty::to_hex( ntk.node_function( n ) ) == "d" )
+      {
+       ntk.foreach_fanin( n, [&]( auto const& f, auto j ) {
+          if ( !drawer.draw_signal( ntk, n, f ) )
           return true;
-        edges << fmt::format( "{} -> {} [style={}]\n",
-                              ntk.node_to_index( ntk.get_node( f ) ),
-                              ntk.node_to_index( n ),
-                              drawer.signal_style( ntk, f ) );
-        return true;
-      } );
+          edges << fmt::format( "{} -> {} [color={}]\n",
+              ntk.node_to_index( ntk.get_node( f ) ),
+              ntk.node_to_index( n ),
+              j == 0 ? "red" : "black" );
+          return true;
+          } );
+      }
+      else
+      {
+       ntk.foreach_fanin( n, [&]( auto const& f ) {
+          if ( !drawer.draw_signal( ntk, n, f ) )
+          return true;
+          edges << fmt::format( "{} -> {} [style={}]\n",
+              ntk.node_to_index( ntk.get_node( f ) ),
+              ntk.node_to_index( n ),
+              drawer.signal_style( ntk, f ) );
+          return true;
+          } );
+      }
     }
 
     level_to_node_indexes[depth_ntk.level( n )].push_back( ntk.node_to_index( n ) );
