@@ -125,6 +125,8 @@ namespace percy
             bool add_symvar_clauses = true; ///< Symmetry break: impose order on symmetric variables
             bool add_lex_clauses = false; ///< Symmetry break: order step fanins lexicographically
 
+            bool add_fanout_clauses = false; ///address implication logic fanout conflict problem
+
             /// Limit on the number of SAT conflicts. Zero means no limit.
             int conflict_limit = 0;
             
