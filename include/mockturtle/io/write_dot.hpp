@@ -288,7 +288,7 @@ void write_dot( Ntk const& ntk, std::ostream& os, Drawer const& drawer = {} )
     if ( !ntk.is_constant( n ) && !ntk.is_pi( n ) )
     {
       /* for img_network drawing, modified by Zhufei */
-      if( kitty::to_hex( ntk.node_function( n ) ) == "d" )
+      if( ntk.node_function( n )._bits[0] == 0xd )
       {
        ntk.foreach_fanin( n, [&]( auto const& f, auto j ) {
           if ( !drawer.draw_signal( ntk, n, f ) )
