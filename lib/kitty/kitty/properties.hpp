@@ -210,6 +210,40 @@ bool is_selfdual( const TT& tt )
   return tt2 == tt1;
 }
 
+/*! \brief Checks if a function is normal
+  A function is normal iff f(0, ..., 0) = 0.
+  \param tt Truth table
+*/
+template<typename TT>
+bool is_normal( const TT& tt )
+{
+  return !get_bit( tt, 0u );
+}
+
+/*! \brief Checks if a function is trivial
+  A function is trival if it is equal to (or the complement of) a
+  variable or constant zero.
+  \param tt Truth table
+*/
+template<typename TT>
+bool is_trivial( const TT& tt )
+{
+  /* compare to constants */
+  if ( is_const0( tt ) || is_const0( ~tt ) )
+    return true;
+
+  /* compare to variables */
+  TT tt_check = tt;
+  for ( auto i = 0; i < tt.num_vars(); ++i )
+  {
+    create_nth_var( tt_check, i );
+    if ( tt == tt_check || tt == ~tt_check )
+      return true;
+  }
+
+  return false;
+}
+
 /*! \brief Generate runlength encoding of a function
   This function iterates through the bits of a function and calls a function
   for each runlength and value.  For example, if this function is called for
@@ -254,6 +288,29 @@ std::vector<uint32_t> runlength_pattern( const TT& tt )
     pattern.push_back( length );
   } );
   return pattern;
+}
+
+/*! \brief Returns the absolute distinguishing power of a function
+  The absolute distinguishing power of a function f is the number of
+  distinguishing pair {i,j} of bits, where f(i) != f(j).
+  \param tt Truth table
+*/
+template<typename TT>
+inline uint64_t absolute_disinguishing_power( const TT& tt )
+{
+  return count_zeros( tt ) * count_ones( tt );
+}
+
+/*! brief Returns the relative distinguishing power of a function wrt. to target function
+  Quantifies the number of distinguishing pairs in the target function
+  that can be distinguished by the function.
+  \param tt Truth table of function
+  \param target_tt Truth table of target function
+*/
+template<typename TT>
+inline uint64_t relative_distinguishing_power( const TT& tt, const TT& target_tt )
+{
+  return count_ones( ~tt & ~target_tt ) * count_ones( tt & target_tt ) + count_ones( ~tt & target_tt ) * count_ones( tt & ~target_tt ); 
 }
 
 } // namespace kitty

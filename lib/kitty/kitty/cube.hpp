@@ -77,6 +77,10 @@ public:
     _bits = _mask = 0u;
 
     auto p = str.begin();
+    if ( p == str.end() )
+    {
+      return;
+    }
 
     for ( uint64_t i = 1; i <= ( uint64_t( 1u ) << 32u ); i <<= 1 )
     {
@@ -264,10 +268,10 @@ inline void print_cubes( const std::vector<cube>& cubes, unsigned length = 32u, 
   for ( const auto& cube : cubes )
   {
     cube.print( length, os );
-    std::cout << '\n';
+    os << '\n';
   }
 
-  std::cout << std::flush;
+  os << std::flush;
 }
 
 template<>
