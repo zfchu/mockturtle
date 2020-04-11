@@ -270,7 +270,7 @@ private:
       signals.push_back( db.create_pi() );
     }
 
-    load_optimal_xmgs( 1 ); //size optimization
+    load_optimal_xmgs( 3 ); //depth/size optimization
 
     for ( const auto e : opt_xmgs )
     {
