@@ -194,8 +194,8 @@ std::vector<signal<NtkDest>> cleanup_dangling( NtkSource const& ntk, NtkDest& de
           old_to_new[node] = dest.create_node( children, ntk.node_function( node ) );
           break;
         }
-        old_to_new[node] = dest.clone_node( ntk, node, children );
-        //std::cerr << "[e] something went wrong, could not copy node " << ntk.node_to_index( node ) << "\n";
+        
+        std::cerr << "[e] something went wrong, could not copy node " << ntk.node_to_index( node ) << "\n";
       } while ( false );
     }
   } );

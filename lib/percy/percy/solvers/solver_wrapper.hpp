@@ -34,7 +34,7 @@ namespace percy
         virtual void add_var() = 0;
         virtual int  add_clause(pabc::lit* begin, pabc::lit* end) = 0;
         virtual int  var_value(int var) = 0;
-        virtual pabc::abctime set_time_limit( pabc::abctime limit ) = 0;
+        //virtual pabc::abctime set_time_limit( pabc::abctime limit ) = 0;
         virtual synth_result solve(int conflict_limit = 0) = 0;
         virtual synth_result solve(pabc::lit* begin, pabc::lit* end, int conflict_limit = 0) = 0;
     };
