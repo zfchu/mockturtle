@@ -443,6 +443,21 @@ template<class Ntk>
 inline constexpr bool has_create_maj_v = has_create_maj<Ntk>::value;
 #pragma endregion
 
+#pragma region has_create_imp
+template<class Ntk, class = void>
+struct has_create_imp : std::false_type
+{
+};
+
+template<class Ntk>
+struct has_create_imp<Ntk, std::void_t<decltype( std::declval<Ntk>().create_imp( std::declval<signal<Ntk>>(), std::declval<signal<Ntk>>() ) )>> : std::true_type
+{
+};
+
+template<class Ntk>
+inline constexpr bool has_create_imp_v = has_create_imp<Ntk>::value;
+#pragma endregion
+
 #pragma region has_create_ite
 template<class Ntk, class = void>
 struct has_create_ite : std::false_type
@@ -981,6 +996,21 @@ struct has_is_maj<Ntk, std::void_t<decltype( std::declval<Ntk>().is_maj( std::de
 
 template<class Ntk>
 inline constexpr bool has_is_maj_v = has_is_maj<Ntk>::value;
+#pragma endregion
+
+#pragma region has_is_imp
+template<class Ntk, class = void>
+struct has_is_imp : std::false_type
+{
+};
+
+template<class Ntk>
+struct has_is_imp<Ntk, std::void_t<decltype( std::declval<Ntk>().is_imp( std::declval<node<Ntk>>() ) )>> : std::true_type
+{
+};
+
+template<class Ntk>
+inline constexpr bool has_is_imp_v = has_is_imp<Ntk>::value;
 #pragma endregion
 
 #pragma region has_is_ite

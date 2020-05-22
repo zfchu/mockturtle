@@ -143,6 +143,15 @@ std::vector<signal<NtkDest>> cleanup_dangling( NtkSource const& ntk, NtkDest& de
             break;
           }
         }
+        if constexpr ( has_is_imp_v<NtkSource> )
+        {
+          static_assert( has_create_imp_v<NtkDest>, "NtkDest cannot create IMP gates" );
+          if ( ntk.is_imp( node ) )
+          {
+            old_to_new[node] = dest.create_imp( children[0], children[1] );
+            break;
+          }
+        }
         if constexpr ( has_is_ite_v<NtkSource> )
         {
           static_assert( has_create_ite_v<NtkDest>, "NtkDest cannot create ITE gates" );
@@ -195,8 +204,7 @@ std::vector<signal<NtkDest>> cleanup_dangling( NtkSource const& ntk, NtkDest& de
           break;
         }
         
-        old_to_new[node] = dest.clone_node( ntk, node, children );
-        //std::cerr << "[e] something went wrong, could not copy node " << ntk.node_to_index( node ) << "\n";
+        std::cerr << "[e] something went wrong, could not copy node " << ntk.node_to_index( node ) << "\n";
       } while ( false );
     }
   } );
