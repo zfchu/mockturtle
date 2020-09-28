@@ -30,6 +30,7 @@ v0.2 (not yet released)
     - Collapse network into single node per output network `#309 <https://github.com/lsils/mockturtle/pull/309>`_
     - Generic balancing algorithm `#340 <https://github.com/lsils/mockturtle/pull/340>`_
     - Check functional equivalence (`circuit_validator`) `#346 <https://github.com/lsils/mockturtle/pull/346>`_
+    - Restructured resubstitution framework (`resubstitution`), simulation-guided resubstitution (`sim_resub`) `#373 <https://github.com/lsils/mockturtle/pull/373>`_
 * Views:
     - Assign names to signals and outputs (`names_view`) `#181 <https://github.com/lsils/mockturtle/pull/181>`_ `#184 <https://github.com/lsils/mockturtle/pull/184>`_
     - Creates a CNF while creating a network (`cnf_view`) `#274 <https://github.com/lsils/mockturtle/pull/274>`_
@@ -38,6 +39,7 @@ v0.2 (not yet released)
     - Read BLIF files using *lorina* (`blif_reader`) `#167 <https://github.com/lsils/mockturtle/pull/167>`_
     - Write networks to BLIF files (`write_blif`) `#169 <https://github.com/lsils/mockturtle/pull/169>`_ `#184 <https://github.com/lsils/mockturtle/pull/184>`_
     - Create circuit from integer index list (`create_from_binary_index_list`) `#259 <https://github.com/lsils/mockturtle/pull/259>`_
+    - Write networks to AIGER files (`write_aiger`) `#379 <https://github.com/lsils/mockturtle/pull/379>`_
 * Resynthesis functions:
     - Resynthesis function based on DSD decomposition (`dsd_resynthesis`) `#182 <https://github.com/lsils/mockturtle/pull/182>`_
     - Resynthesis function based on Shannon decomposition (`shannon_resynthesis`) `#185 <https://github.com/lsils/mockturtle/pull/185>`_
@@ -57,6 +59,7 @@ v0.2 (not yet released)
     - Create self-dualization of a logic network (`self_dualize_aig`) `#331 <https://github.com/lsils/mockturtle/pull/331>`_
     - Binary decoder (`binary_decoder`) `#342 <https://github.com/lsils/mockturtle/pull/342>`_
     - 2^k MUX (`binary_mux` and `binary_mux_klein_paterson`) `#342 <https://github.com/lsils/mockturtle/pull/342>`_
+    - Random logic networks for XAGs (`random_logic_generator`) `#366 <https://github.com/lsils/mockturtle/pull/366>`_
 * Properties:
     - Costs based on multiplicative complexity (`multiplicative_complexity` and `multiplicative_complexity_depth`) `#170 <https://github.com/lsils/mockturtle/pull/170>`_
 
