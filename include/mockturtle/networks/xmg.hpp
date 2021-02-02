@@ -195,7 +195,7 @@ public:
     _storage->outputs.emplace_back( f.index, f.complement );
     ++_storage->data.num_pos;
 
-    return po_index; 
+    return po_index;
   }
 
   signal create_ro( std::string const& name = std::string() )
@@ -298,10 +298,6 @@ public:
     {
       return ( b.complement == c.complement ) ? b : a;
     }
-    else if ( ( a.index == b.index) && ( b.index == c.index ) )
-    {
-      return ( a.complement == b.complement ) ? a : c;
-    }
 
     /*  complemented edges minimization */
     auto node_complement = false;
@@ -378,10 +374,6 @@ public:
       return c ^ fcompl;
     }
     else if ( b.index == c.index )
-    {
-      return a ^ fcompl;
-    }
-    else if ( ( a.index == b.index ) && ( b.index == c.index ) )
     {
       return a ^ fcompl;
     }
@@ -496,7 +488,7 @@ public:
 
     return {index, node_complement};
   }
-  
+
   signal create_xor3_without_complement_opt( signal a, signal b, signal c )
   {
     /* order inputs */
@@ -623,7 +615,7 @@ public:
   {
     return create_xor3( get_constant( false ), a, b );
   }
-  
+
   signal create_xor_without_complement_opt( signal const& a, signal const& b )
   {
     return create_xor3_without_complement_opt( get_constant( false ), a, b );
@@ -783,10 +775,6 @@ public:
       {
         return std::make_pair( n, child0 ^ node_complement );
       }
-      else if ( ( child0.index == child1.index ) && ( child1.index == child2.index ) )
-      {
-        return std::make_pair( n, child0 ^ node_complement );
-      }
     }
 
     // node already in hash table
@@ -823,7 +811,7 @@ public:
 
     return std::nullopt;
   }
-  
+
   std::optional<std::pair<node, signal>> replace_in_node_without_complement_opt( node const& n, node const& old_node, signal new_signal )
   {
     auto& node = _storage->nodes[n];
@@ -1275,7 +1263,7 @@ public:
 
   uint32_t pi_index( node const& n ) const
   {
-    assert( _storage->nodes[n].children[0].data == _storage->nodes[n].children[1].data &&  
+    assert( _storage->nodes[n].children[0].data == _storage->nodes[n].children[1].data &&
             _storage->nodes[n].children[0].data == _storage->nodes[n].children[2].data );
     assert( _storage->nodes[n].children[0].data < _storage->data.num_pis );
     return static_cast<uint32_t>( _storage->nodes[n].children[0].data );
@@ -1297,7 +1285,7 @@ public:
 
   uint32_t ro_index( node const& n ) const
   {
-    assert( _storage->nodes[n].children[0].data == _storage->nodes[n].children[1].data && 
+    assert( _storage->nodes[n].children[0].data == _storage->nodes[n].children[1].data &&
             _storage->nodes[n].children[0].data == _storage->nodes[n].children[2].data );
     assert( _storage->nodes[n].children[0].data >= _storage->data.num_pis );
     return static_cast<uint32_t>( _storage->nodes[n].children[0].data - _storage->data.num_pis );
@@ -1572,7 +1560,7 @@ public:
 void complement_node( node const& n, std::vector<node> const& parents )
 {
   assert( n != 0 && !is_pi( n ) );
-  
+
   auto & c1 = _storage->nodes[n].children[0];
   auto & c2 = _storage->nodes[n].children[1];
   auto & c3 = _storage->nodes[n].children[2];
@@ -1626,7 +1614,7 @@ void complement_node( node const& n, std::vector<node> const& parents )
  * ( 1 xor a xor b)
  * */
 void xor_inv_jump( node const& n )
-{ 
+{
   assert( n != 0 && !is_pi( n ) && is_xor3( n ) );
 
   auto & c1 = _storage->nodes[n].children[0];
@@ -1634,7 +1622,7 @@ void xor_inv_jump( node const& n )
   auto & c3 = _storage->nodes[n].children[2];
 
   auto tmp = static_cast<int>( c1.weight ) + static_cast<int>( c2.weight ) + static_cast<int>( c3.weight );
-  
+
   if( tmp == 0 )
   {
     return;
