@@ -9,7 +9,7 @@
   Synopsis    [Global declarations.]
 
   Author      [Alan Mishchenko]
-  
+
   Affiliation [UC Berkeley]
 
   Date        [Ver. 1.0. Started - Jan 30, 2009.]
@@ -120,6 +120,24 @@ typedef signed __int64 ABC_INT64_T;
 
 #define ABC_SWAP(Type, a, b)  { Type t = a; a = b; b = t; }
 
+//add by Zhufei, remove redefine warning
+#ifdef ABC_ALLOC
+#undef ABC_ALLOC
+#endif
+
+#ifdef ABC_CALLOC
+#undef ABC_CALLOC
+#endif
+
+#ifdef ABC_FALLOC
+#undef ABC_FALLOC
+#endif
+
+#ifdef ABC_REALLOC
+#undef ABC_REALLOC
+#endif
+//end
+
 #define ABC_ALLOC(type, num)     ((type *) malloc(sizeof(type) * (size_t)(num)))
 #define ABC_CALLOC(type, num)    ((type *) calloc((size_t)(num), sizeof(type)))
 #define ABC_FALLOC(type, num)    ((type *) memset(malloc(sizeof(type) * (size_t)(num)), 0xff, sizeof(type) * (size_t)(num)))
@@ -140,7 +158,7 @@ static inline abctime Abc_Clock()
 {
 #if (defined(LIN) || defined(LIN64)) && !(__APPLE__ & __MACH__) && !defined(__MINGW32__)
     struct timespec ts;
-    if ( clock_gettime(CLOCK_THREAD_CPUTIME_ID, &ts) < 0 ) 
+    if ( clock_gettime(CLOCK_THREAD_CPUTIME_ID, &ts) < 0 )
         return (abctime)-1;
     abctime res = ((abctime) ts.tv_sec) * CLOCKS_PER_SEC;
     res += (((abctime) ts.tv_nsec) * CLOCKS_PER_SEC) / 1000000000;

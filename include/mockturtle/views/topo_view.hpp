@@ -35,6 +35,7 @@
 #include <cassert>
 #include <optional>
 #include <vector>
+#include <algorithm>
 
 #include "../networks/detail/foreach.hpp"
 #include "../traits.hpp"
@@ -151,7 +152,7 @@ public:
   /*! \brief Reimplementation of `num_gates`. */
   auto num_gates() const
   {
-    uint32_t const offset = 1u + this->num_pis() + ( this->get_node( this->get_constant( true ) ) != this->get_node( this->get_constant( false ) ) ); 
+    uint32_t const offset = 1u + this->num_pis() + ( this->get_node( this->get_constant( true ) ) != this->get_node( this->get_constant( false ) ) );
     return static_cast<uint32_t>( topo_order.size() - offset );
   }
 
@@ -180,7 +181,7 @@ public:
   template<typename Fn>
   void foreach_gate( Fn&& fn ) const
   {
-    uint32_t const offset = 1u + this->num_pis() + ( this->get_node( this->get_constant( true ) ) != this->get_node( this->get_constant( false ) ) ); 
+    uint32_t const offset = 1u + this->num_pis() + ( this->get_node( this->get_constant( true ) ) != this->get_node( this->get_constant( false ) ) );
     detail::foreach_element( topo_order.begin() + offset,
                              topo_order.end(),
                              fn );
