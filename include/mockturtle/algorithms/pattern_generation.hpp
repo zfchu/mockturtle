@@ -1,5 +1,5 @@
 /* mockturtle: C++ logic network library
- * Copyright (C) 2018-2020  EPFL
+ * Copyright (C) 2018-2021  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -27,7 +27,8 @@
   \file pattern_generation.hpp
   \brief Expressive Simulation Pattern Generation
 
-  \author Siang-Yun Lee
+  \author Heinz Riener
+  \author Siang-Yun (Sonia) Lee
 */
 
 #pragma once
@@ -69,7 +70,7 @@ struct pattern_generation_params
   bool verbose{false};
 
   /*! \brief Random seed. */
-  std::default_random_engine::result_type random_seed{0};
+  std::default_random_engine::result_type random_seed{1};
 
   /*! \brief Conflict limit of the SAT solver. */
   uint32_t conflict_limit{1000};
@@ -167,6 +168,11 @@ public:
           simulate_nodes<Ntk>( ntk, tts, sim, true );
         } );
       }
+    }
+
+    if constexpr( std::is_same_v<Simulator, bit_packed_simulator> )
+    {
+      sim.randomize_dont_care_bits( ps.random_seed );
     }
   }
 

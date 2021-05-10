@@ -1,5 +1,5 @@
 /* mockturtle: C++ logic network library
- * Copyright (C) 2018-2020  EPFL
+ * Copyright (C) 2018-2021  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -27,8 +27,11 @@
   \file resubstitution.hpp
   \brief Generic resubstitution framework
 
+  \author Eleonora Testa
   \author Heinz Riener
-  \author Siang-Yun Lee
+  \author Mathias Soeken
+  \author Shubham Rai
+  \author Siang-Yun (Sonia) Lee
 */
 
 #pragma once
@@ -81,8 +84,11 @@ struct resubstitution_params
   /*! \brief Use don't cares for optimization. Only used by window-based resub engine. */
   bool use_dont_cares{false};
 
-  /* \brief Window size for don't cares calculation. Only used by window-based resub engine. */
+  /*! \brief Window size for don't cares calculation. Only used by window-based resub engine. */
   uint32_t window_size{12u};
+
+  /*! \brief Whether to prevent from increasing depth. Currently only used by window-based resub engine. */
+  bool preserve_depth{false};
 
   /****** simulation-based resub engine ******/
 
@@ -98,10 +104,10 @@ struct resubstitution_params
   uint32_t conflict_limit{1000};
 
   /*! \brief Random seed for the SAT solver (influences the randomness of counter-examples). Only used by simulation-based resub engine. */
-  uint32_t random_seed{0};
+  uint32_t random_seed{1};
 
   /*! \brief Whether to utilize ODC, and how many levels. 0 = no. -1 = Consider TFO until PO. Only used by simulation-based resub engine. */
-  int odc_levels{0};
+  int32_t odc_levels{0};
 
   /*! \brief Maximum number of trials to call the resub functor. Only used by simulation-based resub engine. */
   uint32_t max_trials{100};
@@ -142,16 +148,16 @@ struct resubstitution_stats
   void report() const
   {
     // clang-format off
-    std::cout <<              "[i] <Top level>\n";
-    std::cout <<              "[i]     ========  Stats  ========\n";
-    std::cout << fmt::format( "[i]     #divisors = {:8d}\n", num_total_divisors );
-    std::cout << fmt::format( "[i]     est. gain = {:8d} ({:>5.2f}%)\n", estimated_gain, ( 100.0 * estimated_gain ) / initial_size );
-    std::cout <<              "[i]     ======== Runtime ========\n";
-    std::cout << fmt::format( "[i]     total         : {:>5.2f} secs\n", to_seconds( time_total ) );
-    std::cout << fmt::format( "[i]       DivCollector: {:>5.2f} secs\n", to_seconds( time_divs ) );
-    std::cout << fmt::format( "[i]       ResubEngine : {:>5.2f} secs\n", to_seconds( time_resub ) );
-    std::cout << fmt::format( "[i]       callback    : {:>5.2f} secs\n", to_seconds( time_callback ) );
-    std::cout <<              "[i]     =========================\n\n";
+    fmt::print( "[i] <Top level>\n" );
+    fmt::print( "[i]     ========  Stats  ========\n" );
+    fmt::print( "[i]     #divisors = {:8d}\n", num_total_divisors );
+    fmt::print( "[i]     est. gain = {:8d} ({:>5.2f}%)\n", estimated_gain, ( 100.0 * estimated_gain ) / initial_size );
+    fmt::print( "[i]     ======== Runtime ========\n" );
+    fmt::print( "[i]     total         : {:>5.2f} secs\n", to_seconds( time_total ) );
+    fmt::print( "[i]       DivCollector: {:>5.2f} secs\n", to_seconds( time_divs ) );
+    fmt::print( "[i]       ResubEngine : {:>5.2f} secs\n", to_seconds( time_resub ) );
+    fmt::print( "[i]       callback    : {:>5.2f} secs\n", to_seconds( time_callback ) );
+    fmt::print( "[i]     =========================\n\n" );
     // clang-format on
   }
 };
@@ -191,13 +197,13 @@ struct default_collector_stats
   void report() const
   {
     // clang-format off
-    std::cout <<              "[i] <DivCollector: default_divisor_collector>\n";
-    std::cout << fmt::format( "[i]     #leaves = {:6d}\n", num_total_leaves );
-    std::cout <<              "[i]     ======== Runtime ========\n";
-    std::cout << fmt::format( "[i]     reconv. cut : {:>5.2f} secs\n", to_seconds( time_cuts ) );
-    std::cout << fmt::format( "[i]     MFFC        : {:>5.2f} secs\n", to_seconds( time_mffc ) );
-    std::cout << fmt::format( "[i]     divs collect: {:>5.2f} secs\n", to_seconds( time_divs ) );
-    std::cout <<              "[i]     =========================\n\n";
+    fmt::print( "[i] <DivCollector: default_divisor_collector>\n" );
+    fmt::print( "[i]     #leaves = {:6d}\n", num_total_leaves );
+    fmt::print( "[i]     ======== Runtime ========\n" );
+    fmt::print( "[i]     reconv. cut : {:>5.2f} secs\n", to_seconds( time_cuts ) );
+    fmt::print( "[i]     MFFC        : {:>5.2f} secs\n", to_seconds( time_mffc ) );
+    fmt::print( "[i]     divs collect: {:>5.2f} secs\n", to_seconds( time_divs ) );
+    fmt::print( "[i]     =========================\n\n" );
     // clang-format on
   }
 };
@@ -292,6 +298,11 @@ private:
 
   bool collect_divisors( node const& root )
   {
+    auto max_depth = std::numeric_limits<uint32_t>::max();
+    if ( ps.preserve_depth )
+    {
+      max_depth = ntk.level( root ) - 1;
+    }
     /* add the leaves of the cuts to the divisors */
     divs.clear();
 
@@ -343,7 +354,7 @@ private:
 
       /* if the fanout has all fanins in the set, add it */
       ntk.foreach_fanout( d, [&]( node const& p ) {
-        if ( ntk.visited( p ) == ntk.trav_id() )
+        if ( ntk.visited( p ) == ntk.trav_id() || ntk.level( p ) > max_depth )
         {
           return true; /* next fanout */
         }
@@ -437,15 +448,15 @@ struct window_resub_stats
   void report() const
   {
     // clang-format off
-    std::cout <<              "[i] <ResubEngine: window_based_resub_engine>\n";
-    std::cout << fmt::format( "[i]     #resub = {:6d}\n", num_resub );
-    std::cout <<              "[i]     ======== Runtime ========\n";
-    std::cout << fmt::format( "[i]     simulation: {:>5.2f} secs\n", to_seconds( time_sim ) );
-    std::cout << fmt::format( "[i]     don't care: {:>5.2f} secs\n", to_seconds( time_dont_care ) );
-    std::cout << fmt::format( "[i]     functor   : {:>5.2f} secs\n", to_seconds( time_compute_function ) );
-    std::cout <<              "[i]     ======== Details ========\n";
+    fmt::print( "[i] <ResubEngine: window_based_resub_engine>\n" );
+    fmt::print( "[i]     #resub = {:6d}\n", num_resub );
+    fmt::print( "[i]     ======== Runtime ========\n" );
+    fmt::print( "[i]     simulation: {:>5.2f} secs\n", to_seconds( time_sim ) );
+    fmt::print( "[i]     don't care: {:>5.2f} secs\n", to_seconds( time_dont_care ) );
+    fmt::print( "[i]     functor   : {:>5.2f} secs\n", to_seconds( time_compute_function ) );
+    fmt::print( "[i]     ======== Details ========\n" );
     functor_st.report();
-    std::cout <<              "[i]     =========================\n\n";
+    fmt::print( "[i]     =========================\n\n" );
     // clang-format on
   }
 };
@@ -459,10 +470,10 @@ struct window_resub_stats
  *
  * Required interfaces of the resubstitution functor:
  * - Constructor: `resub_fn( Ntk const& ntk, Simulator const& sim,`
- * `std::vector<node> const& divs, uint32_t num_divs, default_resub_functor_stats& st )`
+ * `std::vector<node> const& divs, uint32_t num_divs, ResubFnSt& st )`
  * - A public `operator()`: `std::optional<signal> operator()`
  * `( node const& root, TTdc care, uint32_t required, uint32_t max_inserts,`
- * `uint32_t potential_gain, uint32_t& last_gain ) const`
+ * `MffcRes potential_gain, uint32_t& last_gain ) const`
  *
  * Compatible resubstitution functors implemented:
  * - `default_resub_functor`
@@ -470,6 +481,7 @@ struct window_resub_stats
  * - `mig_resub_functor`
  * - `xmg_resub_functor`
  * - `xag_resub_functor`
+ * - `mig_resyn_functor`
  *
  * \param TTsim Truth table type for simulation.
  * \param TTdc Truth table type for don't-care computation.
@@ -492,6 +504,8 @@ public:
   {
   }
 
+  void init() {}
+
   std::optional<signal> run( node const& n, std::vector<node> const& leaves, std::vector<node> const& divs, std::vector<node> const& mffc, mffc_result_t potential_gain, uint32_t& last_gain )
   {
     /* simulate the collected divisors */
@@ -513,7 +527,12 @@ public:
 
     ResubFn resub_fn( ntk, sim, divs, divs.size(), st.functor_st );
     auto res = call_with_stopwatch( st.time_compute_function, [&]() {
-      return resub_fn( n, care, std::numeric_limits<uint32_t>::max(), ps.max_inserts, potential_gain, last_gain );
+      auto max_depth = std::numeric_limits<uint32_t>::max();
+      if ( ps.preserve_depth )
+      {
+        max_depth = ntk.level( n ) - 1;
+      }
+      return resub_fn( n, care, max_depth, ps.max_inserts, potential_gain, last_gain );
     });
     if ( res )
     {
@@ -637,6 +656,9 @@ public:
     /* start the managers */
     DivCollector collector( ntk, ps, collector_st );
     ResubEngine resub_engine( ntk, ps, engine_st );
+    call_with_stopwatch( st.time_resub, [&]() {
+      resub_engine.init();
+    });
 
     progress_bar pbar{ntk.size(), "resub |{0}| node = {1:>4}   cand = {2:>4}   est. gain = {3:>5}", ps.progress};
 
@@ -648,11 +670,6 @@ public:
       }
 
       pbar( i, i, candidates, st.estimated_gain );
-
-      if ( ntk.is_dead( n ) )
-      {
-        return true; /* next */
-      }
 
       /* compute cut, collect divisors, compute MFFC */
       mffc_result_t potential_gain;

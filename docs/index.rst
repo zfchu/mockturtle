@@ -37,6 +37,7 @@ Welcome to mockturtle's documentation!
    algorithms/refactoring
    algorithms/balancing
    algorithms/resubstitution
+   algorithms/resyn_engines
    algorithms/functional_reduction
    algorithms/mig_algebraic_rewriting
    algorithms/akers_synthesis
@@ -85,6 +86,7 @@ Welcome to mockturtle's documentation!
    :caption: Utilities
 
    utils/util_data_structures
+   utils/util_functions
 
 Indices and tables
 ==================

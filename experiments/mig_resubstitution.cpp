@@ -1,5 +1,5 @@
 /* mockturtle: C++ logic network library
- * Copyright (C) 2018-2019  EPFL
+ * Copyright (C) 2018-2021  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -48,7 +48,10 @@ int main()
     fmt::print( "[i] processing {}\n", benchmark );
 
     mig_network mig;
-    lorina::read_aiger( benchmark_path( benchmark ), aiger_reader( mig ) );
+    if ( lorina::read_aiger( benchmark_path( benchmark ), aiger_reader( mig ) ) != lorina::return_code::success )
+    {
+      continue;
+    }
 
     resubstitution_params ps;
     resubstitution_stats st;

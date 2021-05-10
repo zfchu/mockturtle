@@ -1,5 +1,5 @@
 /* mockturtle: C++ logic network library
- * Copyright (C) 2018-2019  EPFL EPFL
+ * Copyright (C) 2018-2021  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -27,6 +27,7 @@
   \file interface.hpp
   \brief Type traits and checkers for the network interface
 
+  \author Heinz Riener
   \author Mathias Soeken
 */
 
@@ -335,6 +336,15 @@ public:
    */
   void substitute_node( node const& old_node, signal const& new_signal );
 
+  /*! \brief Perform multiple node-signal replacements in a network.
+   *
+   * This method replaces all occurrences of a node with a signal for
+   * all pairs (node, signal) in the substitution list.
+   *
+   * \brief substitutions A list of (node, signal) replacement pairs
+   */
+  void substitute_nodes( std::list<std::pair<node, signal>> substitutions );
+
   /*! \brief Replaces a child node by a new signal in a node.
    *
    * If ``n`` has a child pointing to ``old_node``, then it will be replaced by
@@ -362,14 +372,17 @@ public:
    */
   void replace_in_outputs( node const& old_node, signal const& new_signal );
 
-  /*! \brief Removes a node from the hash table.
+  /*! \brief Removes a node (and potentially its fanins) from the hash table .
    *
-   * The node will be marked dead.  This status can be checked with ``is_dead``.
-   * The node is no longer visited in the ``foreach_node`` and ``foreach_gate``
-   * methods.  It still contributes to the overall ``size`` of the network, but
-   * ``num_gates`` does not take dead nodes into account.  Taking out a node
-   * does not change the indexes of other nodes.  The node will be removed from
-   * the hash table.
+   * The node will be marked dead.  This status can be checked with
+   * ``is_dead``.  The node is no longer visited in the
+   * ``foreach_node`` and ``foreach_gate`` methods.  It still
+   * contributes to the overall ``size`` of the network, but
+   * ``num_gates`` does not take dead nodes into account.  Taking out
+   * a node does not change the indexes of other nodes.  The node will
+   * be removed from the hash table.  The reference counters of all
+   * fanin will be decremented and take_out_node will be recursively
+   * invoked on all fanins if their fanout count reach 0.
    */
   void take_out_node( node const& n );
 

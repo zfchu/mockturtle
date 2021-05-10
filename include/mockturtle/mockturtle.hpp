@@ -1,5 +1,5 @@
 /* mockturtle: C++ logic network library
- * Copyright (C) 2018-2019  EPFL
+ * Copyright (C) 2018-2021  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -27,17 +27,24 @@
   \file mockturtle.hpp
   \brief Main header file for mockturtle
 
+  \author Eleonora Testa
+  \author Heinz Riener
   \author Mathias Soeken
+  \author Siang-Yun (Sonia) Lee
 */
 
 #pragma once
 
 #include "mockturtle/traits.hpp"
-#include "mockturtle/io/write_bench.hpp"
+#include "mockturtle/io/aiger_reader.hpp"
 #include "mockturtle/io/bench_reader.hpp"
-#include "mockturtle/io/verilog_reader.hpp"
-#include "mockturtle/io/write_blif.hpp"
 #include "mockturtle/io/blif_reader.hpp"
+#include "mockturtle/io/pla_reader.hpp"
+#include "mockturtle/io/verilog_reader.hpp"
+#include "mockturtle/io/write_aiger.hpp"
+#include "mockturtle/io/write_bench.hpp"
+#include "mockturtle/io/write_blif.hpp"
+#include "mockturtle/io/write_dimacs.hpp"
 #include "mockturtle/io/write_dot.hpp"
 #include "mockturtle/io/write_verilog.hpp"
 #include "mockturtle/io/pla_reader.hpp"
@@ -94,6 +101,7 @@
 #include "mockturtle/algorithms/pattern_generation.hpp"
 #include "mockturtle/algorithms/functional_reduction.hpp"
 #include "mockturtle/utils/stopwatch.hpp"
+#include "mockturtle/utils/index_list.hpp"
 #include "mockturtle/utils/truth_table_cache.hpp"
 #include "mockturtle/utils/string_utils.hpp"
 #include "mockturtle/utils/algorithm.hpp"
@@ -111,6 +119,7 @@
 #include "mockturtle/networks/mig.hpp"
 #include "mockturtle/properties/migcost.hpp"
 #include "mockturtle/properties/mccost.hpp"
+#include "mockturtle/properties/xmgcost.hpp"
 #include "mockturtle/mockturtle.hpp"
 #include "mockturtle/generators/sorting.hpp"
 #include "mockturtle/generators/arithmetic.hpp"
@@ -128,3 +137,4 @@
 #include "mockturtle/views/fanout_view.hpp"
 #include "mockturtle/views/cut_view.hpp"
 #include "mockturtle/views/depth_view.hpp"
+#include "mockturtle/views/aqfp_view.hpp"

@@ -1,5 +1,5 @@
 /* lorina: C++ parsing library
- * Copyright (C) 2018  EPFL
+ * Copyright (C) 2018-2021  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -28,15 +28,17 @@
   \brief Implements simplistic Verilog parser
 
   \author Heinz Riener
+  \author Mathias Soeken
+  \author Siang-Yun (Sonia) Lee
 */
 
 #pragma once
 
-#include <lorina/common.hpp>
-#include <lorina/diagnostics.hpp>
-#include <lorina/detail/utils.hpp>
-#include <lorina/detail/tokenizer.hpp>
-#include <lorina/verilog_regex.hpp>
+#include "common.hpp"
+#include "diagnostics.hpp"
+#include "detail/utils.hpp"
+#include "detail/tokenizer.hpp"
+#include "verilog_regex.hpp"
 #include <iostream>
 #include <queue>
 
@@ -506,7 +508,7 @@ public:
    *
    * \param os Output stream
    */
-  verilog_writer( std::ostream& os )
+  explicit verilog_writer( std::ostream& os )
     : _os( os )
   {}
 
@@ -866,7 +868,7 @@ public:
     {
       if ( diag )
       {
-        diag->report( diagnostic_level::error, "cannot parse module header" );
+        diag->report( diag_id::ERR_VERILOG_MODULE_HEADER );
       }
       return false;
     }
@@ -883,7 +885,7 @@ public:
         {
           if ( diag )
           {
-            diag->report( diagnostic_level::error, "cannot parse input declaration" );
+            diag->report( diag_id::ERR_VERILOG_INPUT_DECLARATION );
           }
           return false;
         }
@@ -895,7 +897,7 @@ public:
         {
           if ( diag )
           {
-            diag->report( diagnostic_level::error, "cannot parse output declaration" );
+            diag->report( diag_id::ERR_VERILOG_OUTPUT_DECLARATION );
           }
           return false;
         }
@@ -907,7 +909,7 @@ public:
         {
           if ( diag )
           {
-            diag->report( diagnostic_level::error, "cannot parse wire declaration" );
+            diag->report( diag_id::ERR_VERILOG_WIRE_DECLARATION );
           }
           return false;
         }
@@ -919,7 +921,7 @@ public:
         {
           if ( diag )
           {
-            diag->report( diagnostic_level::error, "cannot parse wire declaration" );
+            diag->report( diag_id::ERR_VERILOG_WIRE_DECLARATION );
           }
           return false;
         }
@@ -939,7 +941,7 @@ public:
         {
           if ( diag )
           {
-            diag->report( diagnostic_level::error, "cannot parse assign statement" );
+            diag->report( diag_id::ERR_VERILOG_ASSIGNMENT );
           }
           return false;
         }
@@ -954,7 +956,7 @@ public:
         {
           if ( diag )
           {
-            diag->report( diagnostic_level::error, "cannot parse module instantiation statement" );
+            diag->report( diag_id::ERR_VERILOG_MODULE_INSTANTIATION_STATEMENT );
           }
           return false;
         }
@@ -974,8 +976,9 @@ public:
     {
       if ( diag )
       {
-        diag->report( diagnostic_level::warning,
-                      fmt::format( "unresolved dependencies: `{0}` requires `{1}`",  r.first, r.second ) );
+        diag->report( diag_id::WRN_UNRESOLVED_DEPENDENCY )
+          .add_argument( r.first )
+          .add_argument( r.second );
       }
     }
 
@@ -1210,8 +1213,8 @@ public:
     {
       if ( diag )
       {
-        diag->report( diagnostic_level::error,
-                      fmt::format( "cannot parse expression on right-hand side of assign `{0}`", lhs ) );
+        diag->report( diag_id::ERR_VERILOG_ASSIGNMENT_RHS )
+          .add_argument( lhs );
       }
       return false;
     }
@@ -1430,9 +1433,9 @@ private:
  * \param in Input stream
  * \param reader A VERILOG reader with callback methods invoked for parsed primitives
  * \param diag An optional diagnostic engine with callback methods for parse errors
- * \return Success if parsing have been successful, or parse error if parsing have failed
+ * \return Success if parsing has been successful, or parse error if parsing has failed
  */
-inline return_code read_verilog( std::istream& in, const verilog_reader& reader, diagnostic_engine* diag = nullptr )
+[[nodiscard]] inline return_code read_verilog( std::istream& in, const verilog_reader& reader, diagnostic_engine* diag = nullptr )
 {
   verilog_parser parser( in, reader, diag );
   auto result = parser.parse_module();
@@ -1454,12 +1457,25 @@ inline return_code read_verilog( std::istream& in, const verilog_reader& reader,
  * \param filename Name of the file
  * \param reader A VERILOG reader with callback methods invoked for parsed primitives
  * \param diag An optional diagnostic engine with callback methods for parse errors
- * \return Success if parsing have been successful, or parse error if parsing have failed
+ * \return Success if parsing has been successful, or parse error if parsing has failed
  */
-inline return_code read_verilog( const std::string& filename, const verilog_reader& reader, diagnostic_engine* diag = nullptr )
+[[nodiscard]] inline return_code read_verilog( const std::string& filename, const verilog_reader& reader, diagnostic_engine* diag = nullptr )
 {
   std::ifstream in( detail::word_exp_filename( filename ), std::ifstream::in );
-  return read_verilog( in, reader, diag );
+  if ( !in.is_open() )
+  {
+    if ( diag )
+    {
+      diag->report( diag_id::ERR_FILE_OPEN ).add_argument( filename );
+    }
+    return return_code::parse_error;
+  }
+  else
+  {
+    auto const ret = read_verilog( in, reader, diag );
+    in.close();
+    return ret;
+  }
 }
 
 } // namespace lorina
