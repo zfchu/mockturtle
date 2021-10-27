@@ -31,6 +31,7 @@
   \author Heinz Riener
   \author Mathias Soeken
   \author Siang-Yun (Sonia) Lee
+  \author Alessandro Tempia Calvino
 */
 
 #pragma once
@@ -39,7 +40,9 @@
 #include "mockturtle/io/aiger_reader.hpp"
 #include "mockturtle/io/bench_reader.hpp"
 #include "mockturtle/io/blif_reader.hpp"
+#include "mockturtle/io/genlib_reader.hpp"
 #include "mockturtle/io/pla_reader.hpp"
+#include "mockturtle/io/super_reader.hpp"
 #include "mockturtle/io/verilog_reader.hpp"
 #include "mockturtle/io/write_aiger.hpp"
 #include "mockturtle/io/write_bench.hpp"
@@ -58,12 +61,16 @@
 #include "mockturtle/algorithms/equivalence_classes.hpp"
 #include "mockturtle/algorithms/extract_linear.hpp"
 #include "mockturtle/algorithms/lut_mapping.hpp"
+#include "mockturtle/algorithms/mapper.hpp"
 #include "mockturtle/algorithms/bi_decomposition.hpp"
+#include "mockturtle/algorithms/aqfp/buffer_insertion.hpp"
 #include "mockturtle/algorithms/cut_rewriting.hpp"
 #include "mockturtle/algorithms/cut_enumeration/spectr_cut.hpp"
 #include "mockturtle/algorithms/cut_enumeration/cnf_cut.hpp"
+#include "mockturtle/algorithms/cut_enumeration/exact_map_cut.hpp"
 #include "mockturtle/algorithms/cut_enumeration/gia_cut.hpp"
 #include "mockturtle/algorithms/cut_enumeration/mf_cut.hpp"
+#include "mockturtle/algorithms/cut_enumeration/tech_map_cut.hpp"
 #include "mockturtle/algorithms/cleanup.hpp"
 #include "mockturtle/algorithms/xag_optimization.hpp"
 #include "mockturtle/algorithms/xmg_algebraic_rewriting.hpp"
@@ -108,6 +115,8 @@
 #include "mockturtle/utils/progress_bar.hpp"
 #include "mockturtle/utils/mixed_radix.hpp"
 #include "mockturtle/utils/node_map.hpp"
+#include "mockturtle/utils/tech_library.hpp"
+#include "mockturtle/utils/super_utils.hpp"
 #include "mockturtle/utils/cuts.hpp"
 #include "mockturtle/utils/index_list.hpp"
 #include "mockturtle/networks/aig.hpp"
@@ -134,6 +143,7 @@
 #include "mockturtle/views/window_view.hpp"
 #include "mockturtle/views/names_view.hpp"
 #include "mockturtle/views/mapping_view.hpp"
+#include "mockturtle/views/binding_view.hpp"
 #include "mockturtle/views/fanout_view.hpp"
 #include "mockturtle/views/cut_view.hpp"
 #include "mockturtle/views/depth_view.hpp"

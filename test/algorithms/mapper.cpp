@@ -4,29 +4,41 @@
 #include <vector>
 
 #include <lorina/genlib.hpp>
+#include <lorina/super.hpp>
 #include <mockturtle/algorithms/mapper.hpp>
 #include <mockturtle/algorithms/node_resynthesis/mig_npn.hpp>
 #include <mockturtle/algorithms/node_resynthesis/xag_npn.hpp>
 #include <mockturtle/algorithms/node_resynthesis/xmg_npn.hpp>
 #include <mockturtle/generators/arithmetic.hpp>
 #include <mockturtle/io/genlib_reader.hpp>
+#include <mockturtle/io/super_reader.hpp>
 #include <mockturtle/networks/aig.hpp>
 #include <mockturtle/networks/klut.hpp>
 #include <mockturtle/networks/mig.hpp>
 #include <mockturtle/networks/xag.hpp>
 #include <mockturtle/networks/xmg.hpp>
 #include <mockturtle/utils/tech_library.hpp>
+#include <mockturtle/views/binding_view.hpp>
 
 using namespace mockturtle;
 
-std::string const test_library = "GATE   inv1    1 O=!a;     PIN * INV 1 999 0.9 0.3 0.9 0.3\n"
-                                 "GATE   inv2    2 O=!a;     PIN * INV 2 999 1.0 0.1 1.0 0.1\n"
-                                 "GATE   nand2   2 O=!(ab);  PIN * INV 1 999 1.0 0.2 1.0 0.2\n"
-                                 "GATE   xor2    5 O=[ab];   PIN * UNKNOWN 2 999 1.9 0.5 1.9 0.5\n"
-                                 "GATE   mig3    3 O=<abc>;  PIN * INV 1 999 2.0 0.2 2.0 0.2\n"
-                                 "GATE   buf     2 O=a;      PIN * NONINV 1 999 1.0 0.0 1.0 0.0\n"
-                                 "GATE   zero    0 O=0;\n"
-                                 "GATE   one     0 O=1;";
+std::string const test_library = "GATE   inv1    1 O=!a;            PIN * INV 1 999 0.9 0.3 0.9 0.3\n"
+                                 "GATE   inv2    2 O=!a;            PIN * INV 2 999 1.0 0.1 1.0 0.1\n"
+                                 "GATE   nand2   2 O=!(a*b);        PIN * INV 1 999 1.0 0.2 1.0 0.2\n"
+                                 "GATE   xor2    5 O=a^b;           PIN * UNKNOWN 2 999 1.9 0.5 1.9 0.5\n"
+                                 "GATE   mig3    3 O=a*b+a*c+b*c;   PIN * INV 1 999 2.0 0.2 2.0 0.2\n"
+                                 "GATE   buf     2 O=a;             PIN * NONINV 1 999 1.0 0.0 1.0 0.0\n"
+                                 "GATE   zero    0 O=CONST0;\n"
+                                 "GATE   one     0 O=CONST1;";
+
+std::string const super_library = "test.genlib\n"
+                                  "3\n"
+                                  "2\n"
+                                  "6\n"       
+                                  "* nand2 1 0\n"
+                                  "inv1 3\n"
+                                  "* nand2 2 4\n"
+                                  "\0";
 
 TEST_CASE( "Map of MAJ3", "[mapper]" )
 {
@@ -48,7 +60,7 @@ TEST_CASE( "Map of MAJ3", "[mapper]" )
 
   map_params ps;
   map_stats st;
-  klut_network luts = map( aig, lib, ps, &st );
+  binding_view<klut_network> luts = map( aig, lib, ps, &st );
 
   CHECK( luts.size() == 6u );
   CHECK( luts.num_pis() == 3u );
@@ -79,7 +91,7 @@ TEST_CASE( "Map of bad MAJ3 and constant output", "[mapper]" )
 
   map_params ps;
   map_stats st;
-  klut_network luts = map( aig, lib, ps, &st );
+  binding_view<klut_network> luts = map( aig, lib, ps, &st );
 
   CHECK( luts.size() == 6u );
   CHECK( luts.num_pis() == 3u );
@@ -89,7 +101,7 @@ TEST_CASE( "Map of bad MAJ3 and constant output", "[mapper]" )
   CHECK( st.delay == 2.0f );
 }
 
-TEST_CASE( "Map of full adder", "[mapper]" )
+TEST_CASE( "Map of full adder 1", "[mapper]" )
 {
   std::vector<gate> gates;
 
@@ -110,7 +122,43 @@ TEST_CASE( "Map of full adder", "[mapper]" )
 
   map_params ps;
   map_stats st;
-  klut_network luts = map( aig, lib, ps, &st );
+  binding_view<klut_network> luts = map( aig, lib, ps, &st );
+
+  const float eps{ 0.005f };
+
+  CHECK( luts.size() == 8u );
+  CHECK( luts.num_pis() == 3u );
+  CHECK( luts.num_pos() == 2u );
+  CHECK( luts.num_gates() == 3u );
+  CHECK( st.area > 13.0f - eps );
+  CHECK( st.area < 13.0f + eps );
+  CHECK( st.delay > 3.8f - eps );
+  CHECK( st.delay < 3.8f + eps );
+}
+
+TEST_CASE( "Map of full adder 2", "[mapper]" )
+{
+  std::vector<gate> gates;
+
+  std::istringstream in( test_library );
+  auto result = lorina::read_genlib( in, genlib_reader( gates ) );
+  CHECK( result == lorina::return_code::success );
+
+  tech_library<3, classification_type::p_configurations> lib( gates );
+
+  aig_network aig;
+  const auto a = aig.create_pi();
+  const auto b = aig.create_pi();
+  const auto c = aig.create_pi();
+
+  const auto [sum, carry] = full_adder( aig, a, b, c );
+  aig.create_po( sum );
+  aig.create_po( carry );
+
+  map_params ps;
+  ps.cut_enumeration_ps.minimize_truth_table = false;
+  map_stats st;
+  binding_view<klut_network> luts = map( aig, lib, ps, &st );
 
   const float eps{ 0.005f };
 
@@ -146,7 +194,7 @@ TEST_CASE( "Map with inverters", "[mapper]" )
 
   map_params ps;
   map_stats st;
-  klut_network luts = map( aig, lib, ps, &st );
+  binding_view<klut_network> luts = map( aig, lib, ps, &st );
 
   const float eps{ 0.005f };
 
@@ -180,7 +228,7 @@ TEST_CASE( "Map for inverters minimization", "[mapper]" )
 
   map_params ps;
   map_stats st;
-  klut_network luts = map( aig, lib, ps, &st );
+  binding_view<klut_network> luts = map( aig, lib, ps, &st );
 
   const float eps{ 0.005f };
 
@@ -202,7 +250,7 @@ TEST_CASE( "Map of buffer and constant outputs", "[mapper]" )
   auto result = lorina::read_genlib( in, genlib_reader( gates ) );
   CHECK( result == lorina::return_code::success );
 
-  tech_library<3> lib( gates );
+  tech_library<3, classification_type::np_configurations> lib( gates );
 
   aig_network aig;
   const auto a = aig.create_pi();
@@ -230,18 +278,58 @@ TEST_CASE( "Map of buffer and constant outputs", "[mapper]" )
 
   map_params ps;
   map_stats st;
-  klut_network luts = map( aig, lib, ps, &st );
+  binding_view<klut_network> luts = map( aig, lib, ps, &st );
+
+  const float eps{ 0.005f };
+
+  CHECK( luts.size() == 10u );
+  CHECK( luts.num_pis() == 4u );
+  CHECK( luts.num_pos() == 6u );
+  CHECK( luts.num_gates() == 4u );
+  CHECK( st.area > 7.0f - eps );
+  CHECK( st.area < 7.0f + eps );
+  CHECK( st.delay > 1.9f - eps );
+  CHECK( st.delay < 1.9f + eps );
+}
+
+TEST_CASE( "Map with supergates", "[mapper]" )
+{
+  std::vector<gate> gates;
+  super_lib super_data;
+
+  std::istringstream in_lib( test_library );
+  auto result = lorina::read_genlib( in_lib, genlib_reader( gates ) );
+  CHECK( result == lorina::return_code::success );
+
+  std::istringstream in_super( super_library );
+  result = lorina::read_super( in_super, super_reader( super_data ) );
+  CHECK( result == lorina::return_code::success );
+
+  tech_library<3, classification_type::p_configurations> lib( gates, super_data );
+
+  aig_network aig;
+  const auto a = aig.create_pi();
+  const auto b = aig.create_pi();
+  const auto c = aig.create_pi();
+
+  const auto n4 = aig.create_and( a, b );
+  const auto n5 = aig.create_and( b, c );
+  const auto f = aig.create_and( n4, n5 );
+  aig.create_po( f );
+
+  map_params ps;
+  map_stats st;
+  binding_view<klut_network> luts = map( aig, lib, ps, &st );
 
   const float eps{ 0.005f };
 
   CHECK( luts.size() == 9u );
-  CHECK( luts.num_pis() == 4u );
-  CHECK( luts.num_pos() == 6u );
-  CHECK( luts.num_gates() == 3u );
-  CHECK( st.area > 5.0f - eps );
-  CHECK( st.area < 5.0f + eps );
-  CHECK( st.delay > 1.9f - eps );
-  CHECK( st.delay < 1.9f + eps );
+  CHECK( luts.num_pis() == 3u );
+  CHECK( luts.num_pos() == 1u );
+  CHECK( luts.num_gates() == 4u );
+  CHECK( st.area == 6.0f );
+  CHECK( st.delay > 3.8f - eps );
+  CHECK( st.delay < 3.8f + eps );
 }
 
 TEST_CASE( "Exact map of bad MAJ3 and constant output", "[mapper]" )
@@ -258,6 +346,7 @@ TEST_CASE( "Exact map of bad MAJ3 and constant output", "[mapper]" )
   const auto f = aig.create_maj( a, aig.create_maj( a, b, c ), c );
   aig.create_po( f );
   aig.create_po( aig.get_constant( true ) );
+  aig.create_po( a );
 
   map_params ps;
   map_stats st;
@@ -265,7 +354,7 @@ TEST_CASE( "Exact map of bad MAJ3 and constant output", "[mapper]" )
 
   CHECK( mig.size() == 5u );
   CHECK( mig.num_pis() == 3u );
-  CHECK( mig.num_pos() == 2u );
+  CHECK( mig.num_pos() == 3u );
   CHECK( mig.num_gates() == 1u );
   CHECK( st.area == 1.0f );
   CHECK( st.delay == 1.0f );
@@ -298,7 +387,7 @@ TEST_CASE( "Exact map of full adder", "[mapper]" )
   CHECK( st.delay == 2.0f );
 }
 
-TEST_CASE( "Exact map should avoid cycles", "[mapping]" )
+TEST_CASE( "Exact map should avoid cycles", "[mapper]" )
 {
   using resyn_fn = xag_npn_resynthesis<aig_network>;
 
@@ -334,7 +423,7 @@ TEST_CASE( "Exact map should avoid cycles", "[mapping]" )
   CHECK( st.delay == 3.0f );
 }
 
-TEST_CASE( "Exact map with logic sharing", "[mapping]" )
+TEST_CASE( "Exact map with logic sharing", "[mapper]" )
 {
   using resyn_fn = xag_npn_resynthesis<aig_network>;
 

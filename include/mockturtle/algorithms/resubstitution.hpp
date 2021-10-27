@@ -173,15 +173,14 @@ bool substitute_fn( Ntk& ntk, typename Ntk::node const& n, typename Ntk::signal 
 {
   ntk.substitute_node( n, g );
   return true;
-};
+}
 
 template<typename Ntk>
 bool report_fn( Ntk& ntk, typename Ntk::node const& n, typename Ntk::signal const& g )
 {
-  (void)ntk;
-  std::cout << "substitute node " << unsigned( n ) << " with node " << unsigned( ntk.get_node( g ) ) << std::endl;
+  fmt::print( "[i] Substitute node {} with signal {}{}\n", n, ntk.is_complemented( g ) ? "!" : "", ntk.get_node( g ) );
   return false;
-};
+}
 
 struct default_collector_stats
 {
@@ -516,7 +515,7 @@ public:
       simulate( leaves, divs, mffc );
     });
 
-    auto care = kitty::create<TTdc>( static_cast<unsigned int>( leaves.size() ) );
+    auto care = kitty::create<TTdc>( ps.max_pis );
     call_with_stopwatch( st.time_dont_care, [&]() {
       if ( ps.use_dont_cares )
       {
